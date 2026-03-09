@@ -30,6 +30,7 @@ export function Artboard({
 
   const onPointerDown = useCallback(
     (side: "left" | "right") => (e: PointerEvent) => {
+      if (e.button !== 0) return // left click only — let middle click bubble to canvas pan
       e.preventDefault()
       e.stopPropagation()
       dragging.current = { side, startX: e.clientX, startW: w }
