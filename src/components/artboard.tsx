@@ -1,4 +1,6 @@
 import { useRef, useState, useCallback, type PointerEvent } from "react"
+import { toPng } from "html-to-image"
+import { Camera, Check } from "lucide-react"
 import { useCanvasScale } from "./canvas"
 
 type ArtboardProps = {
@@ -21,7 +23,9 @@ export function Artboard({
   children,
 }: ArtboardProps) {
   const [w, setW] = useState(initialWidth)
+  const [copied, setCopied] = useState(false)
   const scale = useCanvasScale()
+  const boardRef = useRef<HTMLDivElement>(null)
   const dragging = useRef<{ side: "left" | "right"; startX: number; startW: number } | null>(null)
 
   const onPointerDown = useCallback(
@@ -36,7 +40,6 @@ export function Artboard({
 
   const onPointerMove = useCallback((e: PointerEvent) => {
     if (!dragging.current) return
-    // Divide by scale so screen pixels map to canvas pixels correctly
     const dx = (e.clientX - dragging.current.startX) / scale
     const delta = dragging.current.side === "right" ? dx : -dx
     setW(Math.max(minWidth, dragging.current.startW + delta))
@@ -44,6 +47,16 @@ export function Artboard({
 
   const onPointerUp = useCallback(() => {
     dragging.current = null
+  }, [])
+
+  const copyScreenshot = useCallback(async () => {
+    if (!boardRef.current) return
+    const dataUrl = await toPng(boardRef.current, { pixelRatio: 2 })
+    const res = await fetch(dataUrl)
+    const blob = await res.blob()
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })])
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
   }, [])
 
   const handle = (side: "left" | "right") => (
@@ -58,7 +71,7 @@ export function Artboard({
   )
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="group/artboard flex flex-col gap-2">
       <div className="flex items-baseline gap-2">
         <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
           {name}
@@ -67,9 +80,10 @@ export function Artboard({
           {Math.round(w)}px
         </span>
       </div>
-      <div className="flex items-stretch">
+      <div className="relative flex items-stretch">
         {handle("left")}
         <div
+          ref={boardRef}
           className={`overflow-hidden rounded-sm bg-background text-foreground shadow-sm ${dark ? "dark" : ""}`}
           data-theme={theme}
           style={{ width: w, height }}
@@ -77,6 +91,17 @@ export function Artboard({
           {children}
         </div>
         {handle("right")}
+
+        {/* Toolbar — appears on hover */}
+        <div className="pointer-events-none absolute -top-8 right-3 flex gap-1 opacity-0 transition-opacity group-hover/artboard:pointer-events-auto group-hover/artboard:opacity-100">
+          <button
+            onClick={copyScreenshot}
+            className="flex size-6 cursor-pointer items-center justify-center rounded bg-black/70 text-white/80 transition-colors hover:bg-black hover:text-white"
+            title="Copy screenshot to clipboard"
+          >
+            {copied ? <Check className="size-3.5" /> : <Camera className="size-3.5" />}
+          </button>
+        </div>
       </div>
     </div>
   )
