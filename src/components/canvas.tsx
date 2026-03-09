@@ -15,43 +15,35 @@ export function Canvas({ children }: { children: React.ReactNode }) {
   const last = useRef({ x: 0, y: 0 })
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Use native event listener to get correct currentTarget and allow preventDefault
+  const zoomAt = useCallback((cx: number, cy: number, delta: number) => {
+    setT(prev => {
+      const factor = Math.exp(-delta * ZOOM_SPEED)
+      const next = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, prev.scale * factor))
+      // Keep the canvas point under the cursor fixed
+      return {
+        scale: next,
+        x: cx - (cx - prev.x) * (next / prev.scale),
+        y: cy - (cy - prev.y) * (next / prev.scale),
+      }
+    })
+  }, [])
+
   const wheelHandler = useCallback((e: globalThis.WheelEvent) => {
     e.preventDefault()
 
+    // Normalize delta: line-mode (mouse wheel) uses big steps, pixel-mode (trackpad) is fine
+    let dy = e.deltaY
+    if (e.deltaMode === 1) dy *= 16 // line mode
+
     if (e.shiftKey) {
-      // Shift + scroll = pan horizontally
-      setT(prev => ({ ...prev, x: prev.x - e.deltaY, y: prev.y - e.deltaX }))
-    } else if (e.ctrlKey) {
-      // Pinch-to-zoom (trackpad) sends ctrlKey + deltaY
-      const rect = containerRef.current!.getBoundingClientRect()
-      const cx = e.clientX - rect.left
-      const cy = e.clientY - rect.top
-      setT(prev => {
-        const factor = Math.exp(-e.deltaY * ZOOM_SPEED)
-        const next = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, prev.scale * factor))
-        return {
-          scale: next,
-          x: cx - (cx - prev.x) * (next / prev.scale),
-          y: cy - (cy - prev.y) * (next / prev.scale),
-        }
-      })
+      // Shift + scroll = pan
+      setT(prev => ({ ...prev, x: prev.x - dy, y: prev.y - e.deltaX }))
     } else {
-      // Default scroll = zoom toward cursor
+      // Zoom toward cursor (works for both trackpad pinch [ctrlKey] and mouse wheel)
       const rect = containerRef.current!.getBoundingClientRect()
-      const cx = e.clientX - rect.left
-      const cy = e.clientY - rect.top
-      setT(prev => {
-        const factor = Math.exp(-e.deltaY * ZOOM_SPEED)
-        const next = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, prev.scale * factor))
-        return {
-          scale: next,
-          x: cx - (cx - prev.x) * (next / prev.scale),
-          y: cy - (cy - prev.y) * (next / prev.scale),
-        }
-      })
+      zoomAt(e.clientX - rect.left, e.clientY - rect.top, dy)
     }
-  }, [])
+  }, [zoomAt])
 
   // Attach native wheel listener with { passive: false } for preventDefault
   const refCallback = useCallback(
