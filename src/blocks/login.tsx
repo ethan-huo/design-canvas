@@ -1,9 +1,14 @@
 import { Artboard } from "@/components/artboard"
 import { Button } from "@/components/ui/button"
 
-export function Login() {
+type LoginProps = {
+  theme?: string
+  dark?: boolean
+}
+
+export function Login({ theme, dark }: LoginProps) {
   return (
-    <Artboard name="Mobile — Login" width={390} height={844}>
+    <Artboard name="Mobile — Login" width={390} height={844} theme={theme} dark={dark}>
       <div className="flex h-full flex-col items-center justify-center gap-6 p-10">
         <div className="text-3xl font-bold tracking-tight">Welcome</div>
         <p className="text-center text-sm text-muted-foreground">

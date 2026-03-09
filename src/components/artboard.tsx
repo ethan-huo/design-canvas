@@ -6,6 +6,8 @@ type ArtboardProps = {
   width: number
   minWidth?: number
   height?: number
+  theme?: string
+  dark?: boolean
   children: React.ReactNode
 }
 
@@ -14,6 +16,8 @@ export function Artboard({
   width: initialWidth,
   minWidth = 200,
   height,
+  theme,
+  dark,
   children,
 }: ArtboardProps) {
   const [w, setW] = useState(initialWidth)
@@ -66,7 +70,8 @@ export function Artboard({
       <div className="flex items-stretch">
         {handle("left")}
         <div
-          className="overflow-hidden rounded-sm bg-white shadow-sm dark:bg-neutral-950"
+          className={`overflow-hidden rounded-sm bg-background text-foreground shadow-sm ${dark ? "dark" : ""}`}
+          data-theme={theme}
           style={{ width: w, height }}
         >
           {children}

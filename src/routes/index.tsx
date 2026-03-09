@@ -13,6 +13,9 @@ function App() {
       <div className="flex flex-wrap gap-20 p-20">
         <NowPlaying />
         <Login />
+        <Login theme="default" dark />
+        <Login theme="rose" />
+        <Login theme="rose" dark />
         <Dashboard />
         <Settings />
       </div>
