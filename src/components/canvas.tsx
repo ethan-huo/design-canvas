@@ -107,10 +107,13 @@ export function Canvas({ children }: { children: React.ReactNode }) {
         </div>
       </ScaleContext>
 
-      {/* Zoom indicator */}
-      <div className="fixed bottom-4 right-4 rounded-md bg-black/60 px-2.5 py-1 text-xs tabular-nums text-white/70">
+      {/* Zoom indicator — click to reset to 100% */}
+      <button
+        onClick={() => setT(prev => ({ ...prev, scale: 1 }))}
+        className="fixed bottom-4 right-4 cursor-pointer rounded-md bg-black/60 px-2.5 py-1 text-xs tabular-nums text-white/70 transition-colors hover:bg-black/80 hover:text-white"
+      >
         {pct}%
-      </div>
+      </button>
     </div>
   )
 }
